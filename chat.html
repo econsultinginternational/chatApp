@@ -1,0 +1,538 @@
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.4.0/css/font-awesome.min.css'>
+<link rel='stylesheet' href='/chatApp/css/style.css'>
+
+<body translate="no">
+
+
+    <!--  <div id="onUserStatusChanged">444</div> -->
+
+    <ul id="activeUsersList">
+
+    </ul>
+    <div class="chatbox-holder">
+        <input type="hidden" id="room-id" value="abcdef">
+        <div id="room-urls"
+            style="text-align: center;display: none;background: #F1EDED;margin: 15px -10px;border: 1px solid rgb(189, 189, 189);border-left: 0;border-right: 0;">
+        </div>
+
+        <div id="chatbox" class="chatbox chatbox-hide">
+            <div class="chatbox-top">
+                <div class="chatbox-avatar">
+                    <a target="_blank" href=""><img src="/chatApp/images/chat.png"></a>
+                </div>
+                <div class="chat-partner-name">
+                    <span class="status online"></span>
+                    <a target="_blank" href="">Online Operator</a>
+                </div>
+                <div class="chatbox-icons">
+                    <a href="javascript:void(0);"><i class="fa fa-minus"></i></a>
+                    <a href="javascript:void(0);"><i class="fa fa-close"></i></a>
+                </div>
+            </div>
+
+            <div id="chat" class="chat-messages">
+
+            </div>
+
+            <div class="chat-input-holder">
+                <textarea class="chat-input" id="input-text-chat" placeholder="Enter Text Chat" disabled></textarea>
+                <!--  <button id="share-file" disabled>Share File</button>
+                <input type="text" id="input-text-chat" placeholder="Enter Text Chat" disabled> -->
+
+                <input type="submit" value="Send" id="message-send" class="message-send" />
+            </div>
+        </div>
+
+       <!--  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.5.0/css/font-awesome.min.css"> -->
+<a href="javascript:void(0)" id="floatChatBtn" class="float" >
+<i class="fa fa-comments my-float"></i>
+</a>
+    </div>
+
+    <script src="https://www.privatechat.us/RTCMultiConnection/dist/RTCMultiConnection.js"></script>
+    <script src="https://www.privatechat.us/RTCMultiConnection/node_modules/webrtc-adapter/out/adapter.js"></script>
+    <script src="https://www.privatechat.us/RTCMultiConnection/node_modules/socket.io/client-dist/socket.io.js"></script>
+    <script src="https://www.privatechat.us/RTCMultiConnection/node_modules/fbr/FileBufferReader.js"></script>
+
+    <script src="/chatApp/js/jquery-3.6.0.js" crossorigin="anonymous"></script>
+
+
+
+
+    <script>
+
+        function appendDIV(event) {
+
+            console.log('event==' + JSON.stringify(event));
+
+            if (empty(event.userid)) {
+                console.log('i am the sender');
+                document.getElementById('chat').innerHTML +=
+                    '<div class="message-box-holder">' +
+                    '<div class="message-box">' +
+                    event +
+                    '</div>';
+
+               
+// To scroll to the bottom of a div
+const theElement = document.getElementById('chat');
+
+const scrollToBottom = (node) => {
+	node.scrollTop = node.scrollHeight;
+}
+
+scrollToBottom(theElement); // The specified node scrolls to the bottom.
+
+
+            } else {
+                console.log('i am the receiver');
+
+                var element = document.getElementById("chatbox");
+                element.classList.remove("chatbox-hide");
+
+
+// Hide floating chat bouton
+var x = document.getElementById("floatChatBtn");
+  if (x.style.display === "none") {
+    x.style.display = "block";
+  } else {
+    x.style.display = "none";
+  }
+
+
+
+                document.getElementById('chat').innerHTML +=
+
+                    '<div class="message-box-holder">' +
+                    '<div class="message-sender">' +
+                    getFullName(event.userid) +
+                    '</div>' +
+                    '<div class="message-box message-partner">' +
+                    event.data +
+                    '</div>' +
+                    '</div>';
+
+                    // To scroll to the bottom of a div
+const theElement = document.getElementById('chat');
+
+const scrollToBottom = (node) => {
+	node.scrollTop = node.scrollHeight;
+}
+
+scrollToBottom(theElement); // The specified node scrolls to the bottom.
+            }
+
+
+            document.getElementById('input-text-chat').focus();
+        }
+
+
+        /*
+        |-------------------------------------------------------------------------------------------------
+        | RTCMultiConnection Code start here
+        |-------------------------------------------------------------------------------------------------
+        */
+
+        var connection = new RTCMultiConnection();
+
+        // by default, socket.io server is assumed to be deployed on your own URL
+        connection.socketURL = 'https://www.privatechat.us:9001/';
+
+        // comment-out below line if you do not have your own socket.io server
+        // connection.socketURL = 'https://rtcmulticonnection.herokuapp.com:443/';
+
+        //connection.socketMessageEvent = 'textchat-plus-fileshare-demo';
+        connection.socketMessageEvent = 'chatbox';
+
+        connection.enableFileSharing = true; // by default, it is "false".
+
+        connection.session = {
+            data: true
+        };
+
+        connection.sdpConstraints.mandatory = {
+            OfferToReceiveAudio: false,
+            OfferToReceiveVideo: false
+        };
+
+        // https://www.rtcmulticonnection.org/docs/iceServers/
+        // use your own TURN-server here!
+        connection.iceServers = [{
+            'urls': [
+                'stun:stun.l.google.com:19302',
+                'stun:stun1.l.google.com:19302',
+                'stun:stun2.l.google.com:19302',
+                'stun:stun.l.google.com:19302?transport=udp',
+            ]
+        }];
+
+        connection.onmessage = appendDIV;
+        //connection.filesContainer = document.getElementById('file-container');
+
+        connection.onopen = function () {
+            //document.getElementById('share-file').disabled = false;
+            document.getElementById('input-text-chat').disabled = false;
+        };
+
+        function disableInputButtons() {
+            document.getElementById('open-or-join-room').disabled = true;
+            document.getElementById('open-room').disabled = true;
+            document.getElementById('join-room').disabled = true;
+            document.getElementById('room-id').disabled = true;
+        }
+        /*
+        |-------------------------------------------------------------------------------------------------
+        | RTCMultiConnection Code end here
+        |-------------------------------------------------------------------------------------------------
+        */
+
+        /*
+        |-------------------------------------------------------------------------------------------------
+        | Customized chat start here
+        |-------------------------------------------------------------------------------------------------
+        */
+
+
+        //connection.socketCustomEvent = 'unique-private-group-or-romm-id'; // don't change this line
+ connection.socketCustomEvent = 'privatelivehelp';
+
+        connection.connectSocket(function (socket) {
+            
+            // listen for custom messaging event
+            socket.on(connection.socketCustomEvent, function (event) {
+
+
+
+                console.log('test2==' + event.messageFor);
+                // check if someone sent you a custom message
+                if (event.messageFor === connection.userid) {
+
+                    /* “trigger onclick function with a keypress javascript”
+                    this option allow us to use enter key to send message */
+                    var input = document.getElementById("input-text-chat");
+                    input.addEventListener("keyup", function (event) {
+                        if (event.keyCode === 13) {
+                            event.preventDefault();
+                            document.getElementById("message-send").click();
+                        }
+                    });
+
+                    /* Message is send when user click on send bouton */
+                    document.getElementById("message-send").onclick = function (e) {
+
+                        let msgValue;
+
+                        msgValue = document.getElementById("input-text-chat").value;
+                        // removing trailing/leading whitespace
+                        msgValue = msgValue.replace(/^\s+|\s+$/g, '');
+                        if (!msgValue.length) return;
+
+                        //connection.send(this.value);
+                        connection.send(msgValue, event.userid);
+                        appendDIV(msgValue);
+                        msgValue = '';
+                        document.getElementById("input-text-chat").value = '';
+
+                    };
+
+                }
+            });
+        });
+
+
+        connection.checkPresence('room8085', function (isRoomExist, roomid, error) {
+            if (isRoomExist === true) {
+                //connection.join(roomid);
+
+                //disableInputButtons();
+                connection.join(roomid, function () {
+                    var userID = uuid();//something like: "ec0c22fa-f909-48da-92cb-db17ecdb91c5" 
+                    connection.extra.userFullName = userID;
+                    //showRoomURL(connection.sessionid, userID);
+                });
+
+            } else {
+
+                //disableInputButtons();
+                connection.open(roomid, function () {
+
+                    var userID = uuid();//something like: "ec0c22fa-f909-48da-92cb-db17ecdb91c5" 
+
+                    connection.extra.userFullName = userID;
+
+                    //showRoomURL(connection.sessionid, userID);
+                });
+            }
+        });
+
+
+        //connection.open(roomid);
+        connection.onopen = function (event) {
+            //document.getElementById('share-file').disabled = false;
+            document.getElementById('input-text-chat').disabled = false;
+        };
+
+        /*
+        |-------------------------------------------------------------------------------------------------
+        | Customized chat end  here
+        |-------------------------------------------------------------------------------------------------
+        */
+
+
+        /*
+         |-------------------------------------------------------------------------------------------------
+         | Handling Room-ID start here
+         |-------------------------------------------------------------------------------------------------
+         */
+
+
+
+        function uuid() {
+            let uniq = Math.floor(Math.random() * 1000);
+            let userName = 'visitor';
+            return userName + '_' + uniq;
+        }
+        connection.onUserStatusChanged = function (event) {
+            //var infoBar = document.getElementById('onUserStatusChanged');
+            var names = [];
+            connection.getAllParticipants().forEach(function (pid) {
+                //names.push(getFullName(pid));
+                names.push(pid);
+            });
+
+            if (!names.length) {
+                names = ['Only You'];
+            } else {
+                names = [connection.extra.userFullName || 'You'].concat(names);
+            }
+
+            //infoBar.innerHTML = '<b>Active users:</b> ' + names.join(', ');
+
+
+
+            let txt = "";
+            names.forEach(myFunction);
+
+            //document.getElementById('activeUsersList').innerHTML = txt;
+
+            function myFunction(value, index, array) {
+
+                txt += "<li>" + value + "</li>";
+
+
+            }
+            console.log('pid==' + names);
+
+            $("#activeUsersList li").click(function () {
+                let receiverId = $(this).html();
+
+
+
+                (function () {
+                    var socket = connection.socket;
+                    //var userid = prompt('Enter userid. You will start text chat with this userid.');
+                    var userid = uuid();//something like: "ec0c22fa-f909-48da-92cb-db17ecdb91c5" 
+                    connection.extra.userFullName = userid;
+                     connection.socketCustomEvent = 'privatelivehelp';
+                    socket.emit(connection.socketCustomEvent, {
+                        messageFor: receiverId,
+                        message: 'join-for-textchat',
+                        fullName: userid,
+                        userid: connection.userid
+                    });
+
+                })();
+
+
+                document.getElementById("message-send").onclick = function (e) {
+
+                    let msgValue;
+
+                    msgValue = document.getElementById("input-text-chat").value;
+                    // removing trailing/leading whitespace
+                    msgValue = msgValue.replace(/^\s+|\s+$/g, '');
+                    if (!msgValue.length) return;
+
+                    //connection.send(this.value);
+                    connection.send(msgValue, event.userid);
+                    appendDIV(msgValue);
+                    msgValue = '';
+
+                };
+
+
+
+               // alert(this.id); // id of clicked li by directly accessing DOMElement property
+                //alert($(this).attr('id')); // jQuery's .attr() method, same but more verbose
+                alert($(this).html()); // gets innerHTML of clicked li
+                alert($(this).text()); // gets text contents of clicked li
+                console.log('id====' + $(this).html());
+            });
+
+
+        };
+
+
+        function getFullName(userid) {
+            var _userFullName = userid;
+            if (connection.peers[userid] && connection.peers[userid].extra.userFullName) {
+                _userFullName = connection.peers[userid].extra.userFullName;
+            }
+            return _userFullName;
+        }
+
+        function showRoomURL(roomid, userNAme) {
+            var roomHashURL = '#' + roomid;
+            var roomQueryStringURL = '?roomid=' + roomid;
+
+            var html = '<h2>Unique URL for your room:</h2><br>';
+
+            html += 'Hash URL: <a href="' + roomHashURL + '" target="_blank">' + roomHashURL + '</a>';
+            html += '<br>';
+            html += 'QueryString URL: <a href="' + roomQueryStringURL + '" target="_blank">' + roomQueryStringURL + '</a>';
+            html += 'your username==' + userNAme;
+            var roomURLsDiv = document.getElementById('room-urls');
+            roomURLsDiv.innerHTML = html;
+
+            roomURLsDiv.style.display = 'block';
+        }
+
+        (function () {
+            var params = {},
+                r = /([^&=]+)=?([^&]*)/g;
+
+            function d(s) {
+                return decodeURIComponent(s.replace(/\+/g, ' '));
+            }
+            var match, search = window.location.search;
+            while (match = r.exec(search.substring(1)))
+                params[d(match[1])] = d(match[2]);
+            window.params = params;
+        })();
+
+        var roomid = '';
+        if (localStorage.getItem(connection.socketMessageEvent)) {
+            roomid = localStorage.getItem(connection.socketMessageEvent);
+        } else {
+            roomid = connection.token();
+        }
+        document.getElementById('room-id').value = roomid;
+        document.getElementById('room-id').onkeyup = function () {
+            localStorage.setItem(connection.socketMessageEvent, this.value);
+        };
+
+        var hashString = location.hash.replace('#', '');
+        if (hashString.length && hashString.indexOf('comment-') == 0) {
+            hashString = '';
+        }
+
+        var roomid = params.roomid;
+        if (!roomid && hashString.length) {
+            roomid = hashString;
+        }
+
+        if (roomid && roomid.length) {
+            document.getElementById('room-id').value = roomid;
+            localStorage.setItem(connection.socketMessageEvent, roomid);
+
+            // auto-join-room
+            (function reCheckRoomPresence() {
+                connection.checkPresence(roomid, function (isRoomExists) {
+                    if (isRoomExists) {
+                        connection.join(roomid);
+                        return;
+                    }
+
+                    setTimeout(reCheckRoomPresence, 5000);
+                });
+            })();
+
+            disableInputButtons();
+        }
+
+        /*
+         |-------------------------------------------------------------------------------------------------
+         | Handling Room-ID end here
+         |-------------------------------------------------------------------------------------------------
+         */
+
+        function empty(data) {
+            if (typeof (data) == 'number' || typeof (data) == 'boolean') {
+                return false;
+            }
+            if (typeof (data) == 'undefined' || data === null) {
+                return true;
+            }
+            if (typeof (data.length) != 'undefined') {
+                return data.length == 0;
+            }
+            var count = 0;
+            for (var i in data) {
+                if (data.hasOwnProperty(i)) {
+                    count++;
+                }
+            }
+            return count == 0;
+        }
+    </script>
+
+
+
+
+    <script id="rendered-js">
+
+        
+
+
+        $(function () {
+
+//Hide chat frame when page load
+
+
+            $('.fa-minus').click(function () {
+                $(this).closest('.chatbox').toggleClass('chatbox-min');
+            });
+            $('.fa-close').click(function () {
+                $(this).closest('.chatbox').hide();
+            });
+
+            // Start chat with floating bouton
+
+           document.getElementById("floatChatBtn").onclick = function (e) {
+         
+           
+            var element = document.getElementById("chatbox");
+                element.classList.remove("chatbox-hide");
+
+
+                let socket = connection.socket;
+                         
+                socket.emit(connection.socketCustomEvent, {
+                    messageFrom: connection.userid,
+                    message: 'join-for-textchat',
+                    userid: connection.userid
+                });
+
+ 
+
+
+// Hide floating chat bouton
+                var x = document.getElementById("floatChatBtn");
+  if (x.style.display === "none") {
+    x.style.display = "block";
+  } else {
+    x.style.display = "none";
+  }
+
+           }
+
+        });
+    </script>
+
+
+
+</body>
+
+</html>
